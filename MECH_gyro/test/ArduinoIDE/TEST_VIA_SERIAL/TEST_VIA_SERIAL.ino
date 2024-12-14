@@ -13,8 +13,11 @@
 __uint32_t print_time_ms = 0;
 __uint32_t stepper_time_ms = 0;
 __uint32_t servo_time_ms = 0;
-__uint32_t integrate_time_us = 0;
-
+__uint32_t motion_time_ms = 0;
+__uint32_t integrate_time_yaw_us = 0;
+__uint32_t integrate_time_pitch_us = 0;
+__uint32_t pitch_detect_ms = 0;
+__uint32_t yaw_detect_ms = 0;
 
 
 bool FLAG_AZIMUTH_CHANGE = false;
@@ -30,6 +33,7 @@ double pitch,yaw,raw_yaw,system_pitch;
 double azimuth;
 double elevation;
 double CurrentPos;
+
 // History Functions 
 
 /*
@@ -98,6 +102,27 @@ double CurrentPos;
       FLAG_ELEVATION_CHANGE = false;
     }
 
+
+// This for detecting motion with accelerometerthe problem is this for acceleration not speed
+bool detect_motion(double motion_vect){
+    return sqrt(acce_x * acce_x + acce_y * acce_y + acce_z * acce_z) > motion_vect;
+}
+
+#define MIN_STEP 0.000001
+void find_min_vector(){
+    for(double i = 1; i < 5; i += MIN_STEP){
+        while(!detect_motion(i)){
+            mpu.getMotion6(&accex,&accey,&accez,&gx,&gy,&gz);
+            setup_acce();
+            Serial.print("Vect now is: ");
+            Serial.print(sqrt(acce_x * acce_x + acce_y * acce_y + acce_z * acce_z),FLOATING_POINT_NUMBER);
+            Serial.print(" Max Vect is: ");
+            Serial.println(i,FLOATING_POINT_NUMBER);
+            delayMicroseconds(20);
+        }
+    }
+    return;
+}
 */
 
 
@@ -175,9 +200,9 @@ void get_user_serial(){
 
 //=================================================MPU Functions==============================================================================================  
 
-#define GYRO_X_OFFSET -1.463190
-#define GYRO_Y_OFFSET  0.702661
-#define GYRO_Z_OFFSET  -0.391108
+#define GYRO_X_OFFSET -1.422841
+#define GYRO_Y_OFFSET  0.690009
+#define GYRO_Z_OFFSET  -0.533911
 #define GYRO_CONST 131.0
 void setup_gyro(){
     gyro_x = gx / GYRO_CONST - GYRO_X_OFFSET;
@@ -186,9 +211,9 @@ void setup_gyro(){
 }
 
 
-#define ACCE_X_OFFSET  0.053919
-#define ACCE_Y_OFFSET 0.004671
-#define ACCE_Z_OFFSET 0-0.000193
+#define ACCE_X_OFFSET 0.057769 
+#define ACCE_Y_OFFSET 0.009872
+#define ACCE_Z_OFFSET -0.000869
 
 #define ACCE_CONST 8192.0
 void setup_acce(){
@@ -288,42 +313,75 @@ void calibrate_gyro(){
     }   
 }
 
-double calibrate_pitch(double v){
-    if(v > 180) v = v - 180;
-    else if(v < 0) v = 180 + v; 
-    return v;
+#define MIN_YAW 0.5
+bool detect_yaw(double min){
+    return abs(gyro_z) > min;
 }
+#define MIN_PITCH 0.5
+bool detect_pitch(double min){
+    return abs(gyro_x) > min;
+}
+#define MAX_SPEED 99999
+#define MIN_STEP 0.000001
+void find_min_yaw(){
+    for(double i = 0; i < MAX_SPEED; i += MIN_STEP){
+        while(!detect_yaw(i)){
+            mpu.getMotion6(&accex,&accey,&accez,&gx,&gy,&gz);
+            setup_gyro();
+            Serial.print("Speed now is: ");
+            Serial.print(gyro_z,FLOATING_POINT_NUMBER);
+            Serial.print(" Max Speed is: ");
+            Serial.println(i,FLOATING_POINT_NUMBER);
+            delayMicroseconds(20);
+        }
+    }
+    return;
+}
+
+void find_min_pitch(){
+    for(double i = 0; i < MAX_SPEED; i += MIN_STEP){
+        while(!detect_pitch(i)){
+            mpu.getMotion6(&accex,&accey,&accez,&gx,&gy,&gz);
+            setup_gyro();
+            Serial.print("Speed now is: ");
+            Serial.print(gyro_x,FLOATING_POINT_NUMBER);
+            Serial.print(" Max Speed is: ");
+            Serial.println(i,FLOATING_POINT_NUMBER);
+            delayMicroseconds(20);
+        }
+    }
+    return;
+}
+
+
+
 double calibrate_yaw(double v){
     if(v >= 360) v = v - 360;
     else if(v < 0) v = 360 + v;
     return v;
 }
 
-#define INTIAL_PITCH 0
-#define ALPHA_FUSION  0.98
-void update_angles(){
-    double sample;
-    if( micros() - integrate_time_us > SAMPLE_TIME_US ){
-
-        yaw -= (gyro_z / 1000) * ((micros() - integrate_time_us) / 1000.0);
-        sample = (gyro_x / 1000) * ((micros() - integrate_time_us) / 1000.0);
+void update_yaw(){
+    if( micros() - integrate_time_yaw_us > SAMPLE_TIME_US ){
+        yaw -= (gyro_z / 1000) * ((micros() - integrate_time_yaw_us) / 1000.0);
         yaw = calibrate_yaw(yaw);
-        integrate_time_us = micros();
-
+        integrate_time_yaw_us = micros();
     }
-    while(acce_y == 0 && acce_z == 0){
+}
+
+#define ALPHA_FUSION  0.98
+void update_pitch(){
+    double sample;
+    while(acce_x == 0 && acce_z == 0){
         mpu.getMotion6(&accex,&accey,&accez,&gx,&gy,&gz);
         setup_gyro();
         setup_acce();
     }
-
-    pitch = (ALPHA_FUSION ) * (pitch + sample ) + (1 - ALPHA_FUSION) * ( atan2(acce_y,sqrt(acce_z * acce_z + acce_x * acce_x)) * 180.0 / PI );
-
-}
-
-#define MIN_MOTION 0.1
-bool detect_motion(){
-    return sqrt(acce_x * acce_x + acce_y * acce_y) > MIN_MOTION;
+    if(micros() - integrate_time_pitch_us > SAMPLE_TIME_US){
+        sample = (gyro_x / 1000) * ((micros() - integrate_time_pitch_us) / 1000.0);
+        integrate_time_pitch_us = micros();
+    }
+    pitch = (ALPHA_FUSION ) * (pitch + sample) + (1 - ALPHA_FUSION) *(atan2(acce_y,sqrt(acce_z * acce_z + acce_x * acce_x)) * 180.0 / PI );
 }
 
 
@@ -412,46 +470,82 @@ void setup(){
     mpu.getMotion6(&accex,&accey,&accez,&gx,&gy,&gz);
     setup_gyro();
     setup_acce();
-    update_angles();
+    update_pitch();
+    update_yaw();
+
 
     FLAG_ELEVATION_CHANGE = false;
-
     CurrentPos = yaw;
     servo_time_ms = millis();
     stepper_time_ms = millis();
     print_time_ms = millis();
-    integrate_time_us = micros();
+    motion_time_ms = millis();
+    pitch_detect_ms = millis();
+    yaw_detect_ms = millis();
+    integrate_time_pitch_us = micros();
+    integrate_time_yaw_us = micros();
 
 
+    //calibrate_gyro();
+    //find_min_yaw();
+    //find_min_pitch();
 }
 
 //==================================================================LOOP_function==============================================================================================
 
 #define STEPPER_TIME_FEEDBACK_MS 5
-#define SERVO_TIME_FEEDBACK_MS 500
+#define SERVO_TIME_FEEDBACK_MS 200
 #define MOTOR_TIME_OUT_MS 500
 #define PRINT_ANGLE_TIME_MS 1000
+#define MOTION_TIMEOUT 500
 #define EPSELON 1 
 void loop(){
   
     mpu.getMotion6(&accex,&accey,&accez,&gx,&gy,&gz);
     setup_gyro();
     setup_acce();
-    update_angles();
+    // This is for Pitch 
+    if(detect_pitch(MIN_PITCH)){
+        update_pitch();
+        pitch_detect_ms = millis();
+    }
+    else{
+        if(millis() - pitch_detect_ms < MOTION_TIMEOUT){
+            update_pitch();
+        }
+        else{
+            integrate_time_pitch_us = micros();
+        }
+    }
+    // This is for Yaw 
+    if(detect_yaw(MIN_YAW)){
+        update_yaw();
+        yaw_detect_ms = millis();
+    }
+    else{
+        if(millis() - yaw_detect_ms < MOTION_TIMEOUT){
+            update_yaw();
+        }
+        else{
+            integrate_time_yaw_us = micros();
+        }
+    }
+
+
+
 
     if(Serial.available() > 0){
         get_user_serial();
         Clear_Serial();
     }
-    
     if(millis() - print_time_ms > PRINT_ANGLE_TIME_MS){
 
-        Serial.print("Current Pos: ");
-        Serial.print(CurrentPos);
-        Serial.print(" pitch: ");
+        Serial.print("pitch: ");
         Serial.print(pitch);
         Serial.print(" yaw: ");
         Serial.print(yaw);
+        Serial.print(" Current Pos: ");
+        Serial.print(CurrentPos);
         Serial.print(" azimuth: ");
         Serial.print(azimuth);
         Serial.print(" elevation: ");
@@ -459,7 +553,8 @@ void loop(){
         print_time_ms = millis();
 
     }
-    /*
+
+
     if(millis() - stepper_time_ms > STEPPER_TIME_FEEDBACK_MS){
         stepper_move();
         stepper_time_ms = millis();
@@ -468,7 +563,7 @@ void loop(){
         servo_move();
         servo_time_ms = millis();
     }
-  */
+    
     
     
 }

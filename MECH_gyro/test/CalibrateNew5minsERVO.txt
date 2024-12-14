@@ -1,0 +1,16 @@
+offgx: -1.422336 offgy: 0.690178 offgz: -0.533967 oaccx: 0.057762 oaccy: 0.009867 oaccz: -0.000846
+offgx: -1.422379 offgy: 0.690166 offgz: -0.533961 oaccx: 0.057762 oaccy: 0.009868 oaccz: -0.000848
+offgx: -1.422419 offgy: 0.690135 offgz: -0.533950 oaccx: 0.057763 oaccy: 0.009868 oaccz: -0.000850
+offgx: -1.422454 offgy: 0.690134 offgz: -0.533938 oaccx: 0.057763 oaccy: 0.009868 oaccz: -0.000852
+offgx: -1.422497 offgy: 0.690116 offgz: -0.533927 oaccx: 0.057764 oaccy: 0.009868 oaccz: -0.000854
+offgx: -1.422514 offgy: 0.690106 offgz: -0.533952 oaccx: 0.057764 oaccy: 0.009869 oaccz: -0.000855
+offgx: -1.422545 offgy: 0.690110 offgz: -0.533956 oaccx: 0.057764 oaccy: 0.009869 oaccz: -0.000856
+offgx: -1.422552 offgy: 0.690091 offgz: -0.533955 oaccx: 0.057765 oaccy: 0.009869 oaccz: -0.000858
+offgx: -1.422591 offgy: 0.690071 offgz: -0.533962 oaccx: 0.057766 oaccy: 0.009870 oaccz: -0.000859
+offgx: -1.422640 offgy: 0.690058 offgz: -0.533958 oaccx: 0.057766 oaccy: 0.009871 oaccz: -0.000861
+offgx: -1.422665 offgy: 0.690045 offgz: -0.533931 oaccx: 0.057767 oaccy: 0.009871 oaccz: -0.000862
+offgx: -1.422698 offgy: 0.690028 offgz: -0.533948 oaccx: 0.057767 oaccy: 0.009871 oaccz: -0.000864
+offgx: -1.422735 offgy: 0.690015 offgz: -0.533938 oaccx: 0.057768 oaccy: 0.009870 oaccz: -0.000865
+offgx: -1.422769 offgy: 0.690013 offgz: -0.533940 oaccx: 0.057768 oaccy: 0.009871 oaccz: -0.000867
+offgx: -1.422803 offgy: 0.690005 offgz: -0.533928 oaccx: 0.057769 oaccy: 0.009871 oaccz: -0.000867
+offgx: -1.422841 offgy: 0.690009 offgz: -0.533911 oaccx: 0.057769 oaccy: 0.009872 oaccz: -0.000869
