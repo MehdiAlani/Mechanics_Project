@@ -1,0 +1,7 @@
+carte NODEMCU ESP8266 V3 
+MPU6050 MPU-6050 GY-521 Module 3 Axes gyro + 3 Axes Accelerometer
+MINI SERVOMOTEUR SG-90 SG90
+ULN 2003 contrôleur de moteur Pas a Pas
+BYJ-48 Geared Stepper Motor 5V
+Plaque à essai 400pts BB-801P
+Fils de connexions jumper
